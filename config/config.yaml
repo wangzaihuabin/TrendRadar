@@ -119,6 +119,14 @@ rss:
       name: "雅虎财经"
       url: "https://finance.yahoo.com/news/rssindex"
 
+    - id: "voa-chinese-news"
+      name: "美国之音中文新闻"
+      url: "https://www.voachinese.com/api/zm_yql-vomx-tpeybti"
+
+    - id: "nytimes-world"
+      name: "纽约时报 World"
+      url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+
     # 自定义源示例
     # - id: "custom-feed"
     #   name: "自定义源"
