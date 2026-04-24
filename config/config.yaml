@@ -127,6 +127,10 @@ rss:
       name: "纽约时报 World"
       url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
 
+    - id: "zaobao-world"
+      name: "联合早报 国际即时"
+      url: "https://plink.anyfeeder.com/zaobao/realtime/world"
+
     # 自定义源示例
     # - id: "custom-feed"
     #   name: "自定义源"
