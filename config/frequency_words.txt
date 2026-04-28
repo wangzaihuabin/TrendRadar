@@ -192,19 +192,19 @@
 /\bAnthropic\b|\bClaude\b|\bDario Amodei\b/ => Claude
 
 [俄乌冲突]
-/俄乌|乌克兰|俄罗斯|泽连斯基|普京|基辅|克里米亚|顿巴斯/
+/俄乌|乌克兰|俄罗斯|泽连斯基|普京|基辅|克里米亚|顿巴斯|\bUkraine\b|\bRussia\b|\bZelensky\b|\bPutin\b|\bKyiv\b|\bCrimea\b|\bDonbas\b/
 !/中国|国内|中方|我国|外交部|商务部|国防部|央视|人民日报|新华社/
 
 [美伊冲突]
-/美伊|美国|伊朗|霍尔木兹|德黑兰|核设施|制裁|以色列/
+/美伊|美国|伊朗|霍尔木兹|德黑兰|核设施|制裁|以色列|\bIran\b|\bU\.S\.\b|\bUS\b|\bUnited States\b|\bHormuz\b|\bTehran\b|\bnuclear\b|\bsanctions\b|\bIsrael\b/
 !/中国|国内|中方|我国|外交部|商务部|国防部|央视|人民日报|新华社/
 
 [中东热点]
-/中东|以色列|巴勒斯坦|加沙|哈马斯|黎巴嫩|真主党|叙利亚|也门|胡塞|红海|伊朗/
+/中东|以色列|巴勒斯坦|加沙|哈马斯|黎巴嫩|真主党|叙利亚|也门|胡塞|红海|伊朗|\bMiddle East\b|\bIsrael\b|\bPalestine\b|\bGaza\b|\bHamas\b|\bLebanon\b|\bHezbollah\b|\bSyria\b|\bYemen\b|\bHouthis?\b|\bRed Sea\b|\bIran\b/
 !/中国|国内|中方|我国|外交部|商务部|国防部|央视|人民日报|新华社/
 
 [中美政治]
-/中美|中美关系|美中|美中关系|美国政治|中国政治|白宫|国会|参议院|众议院|国务院|五角大楼|特朗普|拜登|卢比奥|关税|贸易战|制裁|台湾|台海|南海|印太|芯片禁令|出口管制/
+/中美|中美关系|美中|美中关系|美国政治|中国政治|白宫|国会|参议院|众议院|国务院|五角大楼|特朗普|拜登|卢比奥|关税|贸易战|制裁|台湾|台海|南海|印太|芯片禁令|出口管制|\bChina\b|\bChinese\b|\bU\.S\.\b|\bUS\b|\bUnited States\b|\bWhite House\b|\bCongress\b|\bSenate\b|\bHouse\b|\bState Department\b|\bPentagon\b|\bTrump\b|\bBiden\b|\bRubio\b|\btariffs?\b|\btrade war\b|\bsanctions\b|\bTaiwan\b|\bSouth China Sea\b|\bIndo-Pacific\b|\bchip ban\b|\bexport controls?\b/
 !/娱乐|明星|电影|电视剧|综艺|体育|游戏/
 
 
