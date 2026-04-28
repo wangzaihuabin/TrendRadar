@@ -1227,9 +1227,11 @@ class NewsAnalyzer:
         # 1. 首先获取原始条目（用于独立展示区，不受 display.regions.rss 影响）
         # 根据模式获取原始条目
         if self.report_mode == "incremental":
-            new_items_dict = self.storage_manager.detect_new_rss_items(rss_data)
-            if new_items_dict:
-                raw_rss_items = self._convert_rss_items_to_list(new_items_dict, rss_data.id_to_name)
+            # 独立展示区用于提供上下文，增量模式下也展示最新 RSS，
+            # 避免已入库但仍重要的固定 RSS 源在推送里完全不可见。
+            latest_data = self.storage_manager.get_latest_rss_data(rss_data.date)
+            if latest_data:
+                raw_rss_items = self._convert_rss_items_to_list(latest_data.items, latest_data.id_to_name)
         elif self.report_mode == "current":
             latest_data = self.storage_manager.get_latest_rss_data(rss_data.date)
             if latest_data:
