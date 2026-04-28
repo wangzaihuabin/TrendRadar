@@ -1167,12 +1167,16 @@ class NewsAnalyzer:
             # 抓取数据
             rss_data = fetcher.fetch_all()
 
+            # Detect new RSS items before saving the current batch. If we save first,
+            # the just-fetched URLs become history and incremental mode drops them.
+            new_items_dict = self.storage_manager.detect_new_rss_items(rss_data)
+
             # 保存到存储后端
             if self.storage_manager.save_rss_data(rss_data):
                 print(f"[RSS] 数据已保存到存储后端")
 
                 # 处理 RSS 数据（按模式过滤）并返回用于合并推送
-                return self._process_rss_data_by_mode(rss_data)
+                return self._process_rss_data_by_mode(rss_data, new_items_dict=new_items_dict)
             else:
                 print(f"[RSS] 数据保存失败")
                 return None, None, None, set()
@@ -1185,7 +1189,7 @@ class NewsAnalyzer:
             print(f"[RSS] 抓取失败: {e}")
             return None, None, None, set()
 
-    def _process_rss_data_by_mode(self, rss_data) -> Tuple[Optional[List[Dict]], Optional[List[Dict]], Optional[List[Dict]], set]:
+    def _process_rss_data_by_mode(self, rss_data, new_items_dict=None) -> Tuple[Optional[List[Dict]], Optional[List[Dict]], Optional[List[Dict]], set]:
         """
         按报告模式处理 RSS 数据，返回与热榜相同格式的统计结构
 
@@ -1246,7 +1250,8 @@ class NewsAnalyzer:
             return None, None, raw_rss_items, rss_new_urls
 
         # 2. 获取新增条目（用于统计）
-        new_items_dict = self.storage_manager.detect_new_rss_items(rss_data)
+        if new_items_dict is None:
+            new_items_dict = self.storage_manager.detect_new_rss_items(rss_data)
         new_items_list = None
         if new_items_dict:
             new_items_list = self._convert_rss_items_to_list(new_items_dict, rss_data.id_to_name)
