@@ -312,6 +312,7 @@ def _load_ai_translation_config(config_data: Dict) -> Dict:
         "ENABLED": enabled_env if enabled_env is not None else trans_config.get("enabled", False),
         "LANGUAGE": _get_env_str("AI_TRANSLATION_LANGUAGE") or trans_config.get("language", "English"),
         "PROMPT_FILE": trans_config.get("prompt_file", "ai_translation_prompt.txt"),
+        "APPEND_TO_ORIGINAL": trans_config.get("append_to_original", False),
         "SCOPE": {
             "HOTLIST": scope.get("hotlist", True),
             "RSS": scope.get("rss", True),

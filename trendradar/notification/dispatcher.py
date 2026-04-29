@@ -69,6 +69,37 @@ class NotificationDispatcher:
         self.max_accounts = config.get("MAX_ACCOUNTS_PER_CHANNEL", 3)
         self.translator = translator
 
+    @staticmethod
+    def _contains_cjk(text: str) -> bool:
+        return any("\u4e00" <= ch <= "\u9fff" for ch in text or "")
+
+    @staticmethod
+    def _contains_latin(text: str) -> bool:
+        return any(("a" <= ch.lower() <= "z") for ch in text or "")
+
+    def _format_translated_title(self, original: str, translated: str) -> str:
+        """Return `original（translated）` for English titles when append mode is enabled."""
+        original = (original or "").strip()
+        translated = (translated or "").strip()
+        if not translated:
+            return original
+
+        append_enabled = bool(
+            self.translator
+            and self.translator.translation_config.get("APPEND_TO_ORIGINAL", False)
+        )
+        if not append_enabled:
+            return translated
+
+        # Only append for English/international titles. Chinese titles are already readable.
+        if self._contains_cjk(original) or not self._contains_latin(original):
+            return original
+
+        if translated == original or translated in original:
+            return original
+
+        return f"{original}（{translated}）"
+
     def translate_content(
         self,
         report_data: Dict,
@@ -196,7 +227,8 @@ class NotificationDispatcher:
         # 回填翻译结果
         for i, (loc_type, idx1, idx2) in enumerate(title_locations):
             if i < len(result.results) and result.results[i].success:
-                translated = result.results[i].translated_text
+                original = result.results[i].original_text
+                translated = self._format_translated_title(original, result.results[i].translated_text)
                 if loc_type == "stats":
                     report_data["stats"][idx1]["titles"][idx2]["title"] = translated
                 elif loc_type == "new_titles":
@@ -797,4 +829,3 @@ class NotificationDispatcher:
             custom_smtp_port=self.config.get("EMAIL_SMTP_PORT", ""),
             get_time_func=self.get_time_func,
         )
-

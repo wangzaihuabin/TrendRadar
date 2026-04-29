@@ -57,8 +57,6 @@ platforms:
   sources:
     - id: "wallstreetcn-hot"
       name: "华尔街见闻"
-    - id: "cls-hot"
-      name: "财联社热门"
     - id: "zhihu"
       name: "知乎"
 
@@ -523,7 +521,8 @@ ai_analysis:
 # 模型配置见上方 ai 配置段
 # ===============================================================
 ai_translation:
-  enabled: false                   # 是否启用翻译功能
+  enabled: true                    # 是否启用翻译功能
+  append_to_original: true         # 英文标题保留原文，并在后面追加中文翻译：Title（标题）
 
   # 翻译目标语言
   # 格式：自然语言描述
