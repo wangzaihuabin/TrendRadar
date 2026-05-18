@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from html import unescape
 from html.parser import HTMLParser
-from typing import Dict
+from typing import Dict, Optional
 
 import requests
 
@@ -76,6 +76,91 @@ class _ArticleHTMLParser(HTMLParser):
         return "".join(self._html_parts)
 
 
+class _TextHTMLParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self._skip_depth = 0
+        self._parts = []
+
+    def handle_starttag(self, tag: str, attrs) -> None:
+        if tag.lower() in {"script", "style", "noscript", "svg"}:
+            self._skip_depth += 1
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.lower() in {"script", "style", "noscript", "svg"} and self._skip_depth:
+            self._skip_depth -= 1
+
+    def handle_data(self, data: str) -> None:
+        if self._skip_depth:
+            return
+        text = re.sub(r"\s+", " ", unescape(data)).strip()
+        if text:
+            self._parts.append(text)
+
+    @property
+    def text(self) -> str:
+        return "\n".join(self._parts)
+
+
+def _html_to_text(html: str) -> str:
+    parser = _TextHTMLParser()
+    parser.feed(html or "")
+    return parser.text.strip()
+
+
+def _extract_wallstreetcn_article_id(url: str) -> Optional[str]:
+    match = re.search(r"wallstreetcn\.com/articles/(\d+)", url or "")
+    return match.group(1) if match else None
+
+
+def _fetch_wallstreetcn_content(url: str, timeout: int, max_chars: int) -> Optional[ArticleFetchResult]:
+    article_id = _extract_wallstreetcn_article_id(url)
+    if not article_id:
+        return None
+
+    api_url = f"https://api-prod.wallstreetcn.com/apiv1/content/articles/{article_id}?extract=0"
+    response = requests.get(
+        api_url,
+        timeout=timeout,
+        headers={
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json",
+        },
+    )
+    response.raise_for_status()
+    data = response.json()
+    if data.get("code") != 20000:
+        return ArticleFetchResult(status="failed", error=f"wallstreetcn_api: {data.get('message', 'unknown')}")
+
+    article = data.get("data") or {}
+    content_html = article.get("content") or ""
+    content_text = _html_to_text(content_html)
+    if not content_text:
+        content_text = article.get("content_short") or article.get("description") or ""
+
+    if not content_text:
+        return ArticleFetchResult(status="failed", error="empty_content")
+
+    return ArticleFetchResult(
+        status="fetched",
+        content_text=content_text[:max_chars],
+        content_html=content_html[: max_chars * 2],
+    )
+
+
+def _extract_meta_description(html: str) -> str:
+    patterns = [
+        r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+name=["\']wscn-share-content["\'][^>]+content=["\']([^"\']+)["\']',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, html or "", flags=re.I | re.S)
+        if match:
+            return unescape(match.group(1)).strip()
+    return ""
+
+
 def guess_language(text: str) -> str:
     if not text:
         return ""
@@ -93,6 +178,10 @@ def fetch_article_content(url: str, timeout: int = 12, max_chars: int = 12000) -
         return ArticleFetchResult(status="skipped", error="empty_url")
 
     try:
+        source_result = _fetch_wallstreetcn_content(url, timeout, max_chars)
+        if source_result is not None:
+            return source_result
+
         response = requests.get(
             url,
             timeout=timeout,
@@ -110,6 +199,8 @@ def fetch_article_content(url: str, timeout: int = 12, max_chars: int = 12000) -
 
         content_text = parser.text.strip()
         content_html = parser.html.strip()
+        if not content_text:
+            content_text = _extract_meta_description(response.text)
         if not content_text:
             return ArticleFetchResult(status="failed", error="empty_content")
 
