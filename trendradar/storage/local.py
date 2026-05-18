@@ -282,6 +282,9 @@ class LocalStorageBackend(SQLiteStorageMixin, StorageBackend):
     def get_all_rss_ids(self, date=None):
         return self._get_all_rss_ids_impl(date)
 
+    def save_article_content(self, source_type, item_id, content, date=None):
+        return self._save_article_content_impl(date, source_type, item_id, content)
+
     # ========================================
     # 本地特有功能：TXT/HTML 快照
     # ========================================

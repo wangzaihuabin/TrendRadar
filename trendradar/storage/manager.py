@@ -367,6 +367,10 @@ class StorageManager:
         """获取所有 RSS ID 和标题"""
         return self.get_backend().get_all_rss_ids(date)
 
+    def save_article_content(self, source_type, item_id, content, date=None):
+        """保存正文抓取结果到对应的新闻/RSS 数据库"""
+        return self.get_backend().save_article_content(source_type, item_id, content, date)
+
 
 
 def get_storage_manager(

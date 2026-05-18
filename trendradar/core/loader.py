@@ -337,6 +337,18 @@ def _load_ai_filter_config(config_data: Dict) -> Dict:
     }
 
 
+def _load_content_fetch_config(config_data: Dict) -> Dict:
+    """加载正文抓取配置"""
+    cfg = config_data.get("content_fetch", {})
+    enabled_env = _get_env_bool("CONTENT_FETCH_ENABLED")
+    return {
+        "ENABLED": enabled_env if enabled_env is not None else cfg.get("enabled", False),
+        "TIMEOUT": int(_get_env_str("CONTENT_FETCH_TIMEOUT") or cfg.get("timeout", 12)),
+        "MAX_ITEMS_PER_RUN": int(_get_env_str("CONTENT_FETCH_MAX_ITEMS_PER_RUN") or cfg.get("max_items_per_run", 20)),
+        "MAX_CHARS": int(_get_env_str("CONTENT_FETCH_MAX_CHARS") or cfg.get("max_chars", 12000)),
+    }
+
+
 def _load_filter_config(config_data: Dict) -> Dict:
     """加载筛选策略配置"""
     filter_cfg = config_data.get("filter", {})
@@ -593,6 +605,9 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
 
     # AI 智能筛选配置
     config["AI_FILTER"] = _load_ai_filter_config(config_data)
+
+    # 正文抓取配置
+    config["CONTENT_FETCH"] = _load_content_fetch_config(config_data)
 
     # 筛选策略配置
     config["FILTER"] = _load_filter_config(config_data)

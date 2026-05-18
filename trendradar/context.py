@@ -1051,6 +1051,9 @@ class AppContext:
                     continue
 
                 title_entry = {
+                    "news_item_id": item.get("news_item_id"),
+                    "source_type": source_type,
+                    "source_id": item.get("source_id", ""),
                     "title": item.get("title", ""),
                     "source_name": item.get("source_name", ""),
                     "url": item.get("url", ""),

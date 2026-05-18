@@ -24,11 +24,21 @@ CREATE TABLE IF NOT EXISTS rss_feeds (
 CREATE TABLE IF NOT EXISTS rss_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,                      -- 标题
+    title_translated TEXT DEFAULT '',         -- 翻译后的标题
+    language TEXT DEFAULT '',                 -- 语言代码/推断结果
+    translation_status TEXT DEFAULT 'pending', -- pending/translated/failed/skipped
+    translated_at TEXT,                       -- 标题翻译时间
     feed_id TEXT NOT NULL,                    -- 所属 RSS 源
     url TEXT NOT NULL,                        -- 文章链接
     published_at TEXT,                        -- RSS 发布时间（ISO 格式）
     summary TEXT,                             -- 摘要/描述
+    summary_translated TEXT DEFAULT '',       -- 翻译后的摘要
     author TEXT,                              -- 作者
+    content_fetch_status TEXT DEFAULT 'pending', -- pending/fetched/failed/skipped
+    content_text TEXT DEFAULT '',             -- 正文纯文本
+    content_html TEXT DEFAULT '',             -- 正文 HTML 片段/快照
+    content_fetched_at TEXT,                  -- 正文抓取时间
+    content_error TEXT DEFAULT '',            -- 正文抓取失败原因
     first_crawl_time TEXT NOT NULL,           -- 首次抓取时间
     last_crawl_time TEXT NOT NULL,            -- 最后抓取时间
     crawl_count INTEGER DEFAULT 1,            -- 抓取次数

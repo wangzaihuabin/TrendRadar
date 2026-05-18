@@ -18,10 +18,19 @@ CREATE TABLE IF NOT EXISTS platforms (
 CREATE TABLE IF NOT EXISTS news_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
+    title_translated TEXT DEFAULT '',
+    language TEXT DEFAULT '',
+    translation_status TEXT DEFAULT 'pending',
+    translated_at TEXT,
     platform_id TEXT NOT NULL,
     rank INTEGER NOT NULL,
     url TEXT DEFAULT '',
     mobile_url TEXT DEFAULT '',
+    content_fetch_status TEXT DEFAULT 'pending',
+    content_text TEXT DEFAULT '',
+    content_html TEXT DEFAULT '',
+    content_fetched_at TEXT,
+    content_error TEXT DEFAULT '',
     first_crawl_time TEXT NOT NULL,      -- 首次抓取时间
     last_crawl_time TEXT NOT NULL,       -- 最后抓取时间
     crawl_count INTEGER DEFAULT 1,       -- 抓取次数

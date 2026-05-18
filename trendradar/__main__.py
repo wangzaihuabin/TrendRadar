@@ -884,6 +884,9 @@ class NewsAnalyzer:
                     display_regions=display_regions,
                 )
 
+        self._persist_title_translations(stats, rss_items)
+        self._fetch_content_for_final_items(stats, rss_items)
+
         # HTML生成（如果启用）— 使用翻译后的数据
         html_file = None
         if self.ctx.config["STORAGE"]["FORMATS"]["HTML"]:
@@ -903,6 +906,96 @@ class NewsAnalyzer:
             )
 
         return stats, html_file, ai_result, rss_items
+
+    def _extract_appended_translation(self, title: str) -> Optional[Tuple[str, str]]:
+        if not title or "（" not in title or not title.endswith("）"):
+            return None
+        original, translated = title.rsplit("（", 1)
+        translated = translated[:-1].strip()
+        original = original.strip()
+        if not original or not translated:
+            return None
+        return original, translated
+
+    def _persist_title_translations(
+        self,
+        stats: Optional[List[Dict]],
+        rss_items: Optional[List[Dict]],
+    ) -> None:
+        """Persist parsed translated titles from display titles like `English（中文）`."""
+        saved = 0
+        for source_type, groups in (("hotlist", stats or []), ("rss", rss_items or [])):
+            for stat in groups:
+                for item in stat.get("titles", []):
+                    item_id = item.get("news_item_id")
+                    parsed = self._extract_appended_translation(item.get("title", ""))
+                    if not item_id or not parsed:
+                        continue
+                    _, translated = parsed
+                    payload = {
+                        "language": "en",
+                        "title_translated": translated,
+                        "translation_status": "translated",
+                        "translated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                    }
+                    if self.storage_manager.save_article_content(source_type, item_id, payload):
+                        saved += 1
+        if saved:
+            print(f"[翻译] 已保存 {saved} 条标题翻译到数据库")
+
+    def _fetch_content_for_final_items(
+        self,
+        stats: Optional[List[Dict]],
+        rss_items: Optional[List[Dict]],
+    ) -> None:
+        """Fetch article bodies for final filtered items when app persistence is enabled."""
+        content_cfg = self.ctx.config.get("CONTENT_FETCH", {})
+        if not content_cfg.get("ENABLED", False):
+            return
+
+        try:
+            from trendradar.crawler.article import build_content_payload, fetch_article_content
+        except Exception as e:
+            print(f"[正文] 正文抓取模块不可用: {e}")
+            return
+
+        targets = []
+        for stat in stats or []:
+            for item in stat.get("titles", []):
+                targets.append(("hotlist", item))
+        for stat in rss_items or []:
+            for item in stat.get("titles", []):
+                targets.append(("rss", item))
+
+        max_items = int(content_cfg.get("MAX_ITEMS_PER_RUN", 20) or 0)
+        if max_items > 0:
+            targets = targets[:max_items]
+
+        if not targets:
+            return
+
+        timeout = int(content_cfg.get("TIMEOUT", 12) or 12)
+        max_chars = int(content_cfg.get("MAX_CHARS", 12000) or 12000)
+        saved = 0
+        failed = 0
+        skipped = 0
+        print(f"[正文] 开始抓取正文: {len(targets)} 条")
+
+        for source_type, item in targets:
+            item_id = item.get("news_item_id")
+            url = item.get("url") or item.get("mobile_url") or ""
+            if not item_id or not url:
+                skipped += 1
+                continue
+
+            result = fetch_article_content(url, timeout=timeout, max_chars=max_chars)
+            payload = build_content_payload(item.get("title", ""), result)
+            if self.storage_manager.save_article_content(source_type, item_id, payload):
+                saved += 1
+            if result.status == "failed":
+                failed += 1
+
+        print(f"[正文] 正文抓取完成: 保存 {saved} 条, 失败 {failed} 条, 跳过 {skipped} 条")
 
     def _send_notification_if_needed(
         self,

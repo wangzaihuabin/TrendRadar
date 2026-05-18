@@ -567,6 +567,13 @@ class RemoteStorageBackend(SQLiteStorageMixin, StorageBackend):
     def get_all_rss_ids(self, date=None):
         return self._get_all_rss_ids_impl(date)
 
+    def save_article_content(self, source_type, item_id, content, date=None):
+        success = self._save_article_content_impl(date, source_type, item_id, content)
+        if success:
+            db_type = "rss" if source_type == "rss" else "news"
+            self._upload_sqlite(date, db_type=db_type)
+        return success
+
     # ========================================
     # 远程特有功能：TXT/HTML 快照（临时目录）
     # ========================================

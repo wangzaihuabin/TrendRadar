@@ -96,11 +96,99 @@ class SQLiteStorageMixin:
                 with open(ai_filter_schema, "r", encoding="utf-8") as f:
                     conn.executescript(f.read())
 
+        self._migrate_app_columns(conn, db_type)
         conn.commit()
+
+    def _ensure_column(self, conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+        cursor = conn.cursor()
+        cursor.execute(f"PRAGMA table_info({table})")
+        existing = {row[1] for row in cursor.fetchall()}
+        if column not in existing:
+            cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+    def _migrate_app_columns(self, conn: sqlite3.Connection, db_type: str) -> None:
+        """Add app-facing columns to existing daily SQLite files."""
+        if db_type == "rss":
+            columns = {
+                "title_translated": "TEXT DEFAULT ''",
+                "language": "TEXT DEFAULT ''",
+                "translation_status": "TEXT DEFAULT 'pending'",
+                "translated_at": "TEXT",
+                "summary_translated": "TEXT DEFAULT ''",
+                "content_fetch_status": "TEXT DEFAULT 'pending'",
+                "content_text": "TEXT DEFAULT ''",
+                "content_html": "TEXT DEFAULT ''",
+                "content_fetched_at": "TEXT",
+                "content_error": "TEXT DEFAULT ''",
+            }
+            for column, definition in columns.items():
+                self._ensure_column(conn, "rss_items", column, definition)
+            return
+
+        columns = {
+            "title_translated": "TEXT DEFAULT ''",
+            "language": "TEXT DEFAULT ''",
+            "translation_status": "TEXT DEFAULT 'pending'",
+            "translated_at": "TEXT",
+            "content_fetch_status": "TEXT DEFAULT 'pending'",
+            "content_text": "TEXT DEFAULT ''",
+            "content_html": "TEXT DEFAULT ''",
+            "content_fetched_at": "TEXT",
+            "content_error": "TEXT DEFAULT ''",
+        }
+        for column, definition in columns.items():
+            self._ensure_column(conn, "news_items", column, definition)
 
     # ========================================
     # 新闻数据存储
     # ========================================
+
+    def _save_article_content_impl(
+        self,
+        date: Optional[str],
+        source_type: str,
+        item_id: int,
+        content: Dict[str, Any],
+    ) -> bool:
+        """Persist fetched article content and translation metadata."""
+        db_type = "rss" if source_type == "rss" else "news"
+        table = "rss_items" if source_type == "rss" else "news_items"
+
+        try:
+            conn = self._get_connection(date, db_type=db_type)
+            cursor = conn.cursor()
+            cursor.execute(
+                f"""
+                UPDATE {table} SET
+                    language = COALESCE(NULLIF(?, ''), language),
+                    title_translated = COALESCE(NULLIF(?, ''), title_translated),
+                    translation_status = COALESCE(NULLIF(?, ''), translation_status),
+                    translated_at = COALESCE(NULLIF(?, ''), translated_at),
+                    content_fetch_status = COALESCE(NULLIF(?, ''), content_fetch_status),
+                    content_text = COALESCE(NULLIF(?, ''), content_text),
+                    content_html = COALESCE(NULLIF(?, ''), content_html),
+                    content_fetched_at = COALESCE(NULLIF(?, ''), content_fetched_at),
+                    content_error = COALESCE(NULLIF(?, ''), content_error)
+                WHERE id = ?
+                """,
+                (
+                    content.get("language", ""),
+                    content.get("title_translated", ""),
+                    content.get("translation_status", ""),
+                    content.get("translated_at", ""),
+                    content.get("content_fetch_status", ""),
+                    content.get("content_text", ""),
+                    content.get("content_html", ""),
+                    content.get("content_fetched_at", ""),
+                    content.get("content_error", ""),
+                    item_id,
+                ),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+        except sqlite3.Error as e:
+            print(f"[存储] 保存正文失败 ({source_type}:{item_id}): {e}")
+            return False
 
     def _save_news_data_impl(self, data: NewsData, log_prefix: str = "[存储]") -> tuple[bool, int, int, int, int]:
         """
