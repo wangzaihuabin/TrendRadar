@@ -574,6 +574,9 @@ class RemoteStorageBackend(SQLiteStorageMixin, StorageBackend):
             self._upload_sqlite(date, db_type=db_type)
         return success
 
+    def find_article_item_id(self, source_type, source_id="", url="", title="", date=None):
+        return self._find_article_item_id_impl(date, source_type, source_id, url, title)
+
     # ========================================
     # 远程特有功能：TXT/HTML 快照（临时目录）
     # ========================================

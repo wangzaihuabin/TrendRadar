@@ -371,6 +371,10 @@ class StorageManager:
         """保存正文抓取结果到对应的新闻/RSS 数据库"""
         return self.get_backend().save_article_content(source_type, item_id, content, date)
 
+    def find_article_item_id(self, source_type, source_id="", url="", title="", date=None):
+        """按来源、URL 或标题查找新闻/RSS 数据库 ID"""
+        return self.get_backend().find_article_item_id(source_type, source_id, url, title, date)
+
 
 
 def get_storage_manager(

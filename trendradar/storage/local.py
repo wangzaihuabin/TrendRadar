@@ -285,6 +285,9 @@ class LocalStorageBackend(SQLiteStorageMixin, StorageBackend):
     def save_article_content(self, source_type, item_id, content, date=None):
         return self._save_article_content_impl(date, source_type, item_id, content)
 
+    def find_article_item_id(self, source_type, source_id="", url="", title="", date=None):
+        return self._find_article_item_id_impl(date, source_type, source_id, url, title)
+
     # ========================================
     # 本地特有功能：TXT/HTML 快照
     # ========================================

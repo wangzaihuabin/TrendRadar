@@ -210,6 +210,70 @@ class SQLiteStorageMixin:
             print(f"[存储] 保存正文失败 ({source_type}:{item_id}): {e}")
             return False
 
+    def _find_article_item_id_impl(
+        self,
+        date: Optional[str],
+        source_type: str,
+        source_id: str = "",
+        url: str = "",
+        title: str = "",
+    ) -> Optional[int]:
+        """Find a news/rss row id by source + URL/title for app content persistence."""
+        db_type = "rss" if source_type == "rss" else "news"
+        try:
+            conn = self._get_connection(date, db_type=db_type)
+            cursor = conn.cursor()
+            if source_type == "rss":
+                if url and source_id:
+                    row = cursor.execute(
+                        "SELECT id FROM rss_items WHERE feed_id = ? AND url = ? LIMIT 1",
+                        (source_id, url),
+                    ).fetchone()
+                    if row:
+                        return int(row[0])
+                if title and source_id:
+                    row = cursor.execute(
+                        "SELECT id FROM rss_items WHERE feed_id = ? AND title = ? ORDER BY id DESC LIMIT 1",
+                        (source_id, title),
+                    ).fetchone()
+                    if row:
+                        return int(row[0])
+                if url:
+                    row = cursor.execute(
+                        "SELECT id FROM rss_items WHERE url = ? ORDER BY id DESC LIMIT 1",
+                        (url,),
+                    ).fetchone()
+                    if row:
+                        return int(row[0])
+                return None
+
+            normalized_url = normalize_url(url, source_id) if url else ""
+            if normalized_url and source_id:
+                row = cursor.execute(
+                    "SELECT id FROM news_items WHERE platform_id = ? AND url = ? LIMIT 1",
+                    (source_id, normalized_url),
+                ).fetchone()
+                if row:
+                    return int(row[0])
+            if title and source_id:
+                row = cursor.execute(
+                    "SELECT id FROM news_items WHERE platform_id = ? AND title = ? ORDER BY id DESC LIMIT 1",
+                    (source_id, title),
+                ).fetchone()
+                if row:
+                    return int(row[0])
+            if normalized_url:
+                row = cursor.execute(
+                    "SELECT id FROM news_items WHERE url = ? ORDER BY id DESC LIMIT 1",
+                    (normalized_url,),
+                ).fetchone()
+                if row:
+                    return int(row[0])
+            return None
+        except sqlite3.Error as e:
+            print(f"[存储] 查找正文记录 ID 失败 ({source_type}:{source_id}): {e}")
+            return None
+
     def _save_news_data_impl(self, data: NewsData, log_prefix: str = "[存储]") -> tuple[bool, int, int, int, int]:
         """
         保存新闻数据到 SQLite（核心实现）

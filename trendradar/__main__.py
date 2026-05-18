@@ -982,9 +982,21 @@ class NewsAnalyzer:
         print(f"[正文] 开始抓取正文: {len(targets)} 条")
 
         for source_type, item in targets:
-            item_id = item.get("news_item_id")
+            item_id = item.get("news_item_id") or item.get("id")
             url = item.get("url") or item.get("mobile_url") or ""
-            if not item_id or not url:
+            if not item_id:
+                item_id = self.storage_manager.find_article_item_id(
+                    source_type=source_type,
+                    source_id=item.get("source_id", ""),
+                    url=url,
+                    title=item.get("title", ""),
+                )
+            if not item_id:
+                print(f"[正文] 跳过: 找不到数据库ID source_type={source_type}, source={item.get('source_id') or item.get('source_name')}, title={item.get('title', '')[:40]}")
+                skipped += 1
+                continue
+            if not url:
+                print(f"[正文] 跳过: 缺少URL source_type={source_type}, id={item_id}, title={item.get('title', '')[:40]}")
                 skipped += 1
                 continue
 
