@@ -1058,6 +1058,7 @@ class AppContext:
                     "source_name": item.get("source_name", ""),
                     "url": item.get("url", ""),
                     "mobile_url": item.get("mobile_url", ""),
+                    "summary": item.get("summary", ""),
                     "ranks": item.get("ranks", []),
                     "rank_threshold": self.rank_threshold,
                     "count": item.get("count", 1),

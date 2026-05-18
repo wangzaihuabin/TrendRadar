@@ -960,12 +960,12 @@ class NewsAnalyzer:
             return
 
         targets = []
-        for stat in stats or []:
-            for item in stat.get("titles", []):
-                targets.append(("hotlist", item))
         for stat in rss_items or []:
             for item in stat.get("titles", []):
                 targets.append(("rss", item))
+        for stat in stats or []:
+            for item in stat.get("titles", []):
+                targets.append(("hotlist", item))
 
         max_items = int(content_cfg.get("MAX_ITEMS_PER_RUN", 20) or 0)
         if max_items > 0:
@@ -1001,8 +1001,16 @@ class NewsAnalyzer:
                 continue
 
             result = fetch_article_content(url, timeout=timeout, max_chars=max_chars)
+            if result.status == "failed" and source_type == "rss" and item.get("summary"):
+                from trendradar.crawler.article import ArticleFetchResult
+                result = ArticleFetchResult(
+                    status="fallback_summary",
+                    content_text=item.get("summary", "")[:max_chars],
+                    content_html="",
+                    error="article_fetch_failed_used_rss_summary",
+                )
             payload = build_content_payload(item.get("title", ""), result)
-            if result.status == "fetched":
+            if result.status in {"fetched", "fallback_summary"}:
                 payload.update(self._enrich_article_content(item, payload, content_cfg))
             if self.storage_manager.save_article_content(source_type, item_id, payload):
                 saved += 1
