@@ -551,9 +551,9 @@ ai_translation:
 # 建议初期保持关闭，确认来源和筛选稳定后再开启，避免请求量过大。
 # ===============================================================
 content_fetch:
-  enabled: false                    # 是否抓取正文并保存到数据库
+  enabled: true                     # 是否抓取正文并保存到数据库
   timeout: 12                       # 单篇文章请求超时时间（秒）
-  max_items_per_run: 20             # 每次运行最多抓取多少篇正文，0=不限制
+  max_items_per_run: 3              # 每次运行最多抓取多少篇正文，0=不限制
   max_chars: 12000                  # 正文纯文本最多保存字符数
   ai_enrich_enabled: true           # 正文抓取成功后，使用 AI 生成摘要；英文正文额外翻译成中文
   summary_max_chars: 500            # 摘要最多字符数
