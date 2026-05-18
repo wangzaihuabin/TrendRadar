@@ -29,8 +29,13 @@ CREATE TABLE IF NOT EXISTS news_items (
     content_fetch_status TEXT DEFAULT 'pending',
     content_text TEXT DEFAULT '',
     content_html TEXT DEFAULT '',
+    content_translated TEXT DEFAULT '',
     content_fetched_at TEXT,
     content_error TEXT DEFAULT '',
+    ai_summary TEXT DEFAULT '',
+    ai_summary_status TEXT DEFAULT 'pending',
+    ai_summary_at TEXT,
+    ai_summary_error TEXT DEFAULT '',
     first_crawl_time TEXT NOT NULL,      -- 首次抓取时间
     last_crawl_time TEXT NOT NULL,       -- 最后抓取时间
     crawl_count INTEGER DEFAULT 1,       -- 抓取次数

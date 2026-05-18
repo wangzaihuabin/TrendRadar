@@ -346,6 +346,9 @@ def _load_content_fetch_config(config_data: Dict) -> Dict:
         "TIMEOUT": int(_get_env_str("CONTENT_FETCH_TIMEOUT") or cfg.get("timeout", 12)),
         "MAX_ITEMS_PER_RUN": int(_get_env_str("CONTENT_FETCH_MAX_ITEMS_PER_RUN") or cfg.get("max_items_per_run", 20)),
         "MAX_CHARS": int(_get_env_str("CONTENT_FETCH_MAX_CHARS") or cfg.get("max_chars", 12000)),
+        "AI_ENRICH_ENABLED": cfg.get("ai_enrich_enabled", True),
+        "SUMMARY_MAX_CHARS": int(_get_env_str("CONTENT_FETCH_SUMMARY_MAX_CHARS") or cfg.get("summary_max_chars", 500)),
+        "TRANSLATE_ENGLISH_CONTENT": cfg.get("translate_english_content", True),
     }
 
 

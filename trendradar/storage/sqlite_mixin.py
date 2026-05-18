@@ -118,8 +118,13 @@ class SQLiteStorageMixin:
                 "content_fetch_status": "TEXT DEFAULT 'pending'",
                 "content_text": "TEXT DEFAULT ''",
                 "content_html": "TEXT DEFAULT ''",
+                "content_translated": "TEXT DEFAULT ''",
                 "content_fetched_at": "TEXT",
                 "content_error": "TEXT DEFAULT ''",
+                "ai_summary": "TEXT DEFAULT ''",
+                "ai_summary_status": "TEXT DEFAULT 'pending'",
+                "ai_summary_at": "TEXT",
+                "ai_summary_error": "TEXT DEFAULT ''",
             }
             for column, definition in columns.items():
                 self._ensure_column(conn, "rss_items", column, definition)
@@ -133,8 +138,13 @@ class SQLiteStorageMixin:
             "content_fetch_status": "TEXT DEFAULT 'pending'",
             "content_text": "TEXT DEFAULT ''",
             "content_html": "TEXT DEFAULT ''",
+            "content_translated": "TEXT DEFAULT ''",
             "content_fetched_at": "TEXT",
             "content_error": "TEXT DEFAULT ''",
+            "ai_summary": "TEXT DEFAULT ''",
+            "ai_summary_status": "TEXT DEFAULT 'pending'",
+            "ai_summary_at": "TEXT",
+            "ai_summary_error": "TEXT DEFAULT ''",
         }
         for column, definition in columns.items():
             self._ensure_column(conn, "news_items", column, definition)
@@ -167,8 +177,13 @@ class SQLiteStorageMixin:
                     content_fetch_status = COALESCE(NULLIF(?, ''), content_fetch_status),
                     content_text = COALESCE(NULLIF(?, ''), content_text),
                     content_html = COALESCE(NULLIF(?, ''), content_html),
+                    content_translated = COALESCE(NULLIF(?, ''), content_translated),
                     content_fetched_at = COALESCE(NULLIF(?, ''), content_fetched_at),
-                    content_error = COALESCE(NULLIF(?, ''), content_error)
+                    content_error = COALESCE(NULLIF(?, ''), content_error),
+                    ai_summary = COALESCE(NULLIF(?, ''), ai_summary),
+                    ai_summary_status = COALESCE(NULLIF(?, ''), ai_summary_status),
+                    ai_summary_at = COALESCE(NULLIF(?, ''), ai_summary_at),
+                    ai_summary_error = COALESCE(NULLIF(?, ''), ai_summary_error)
                 WHERE id = ?
                 """,
                 (
@@ -179,8 +194,13 @@ class SQLiteStorageMixin:
                     content.get("content_fetch_status", ""),
                     content.get("content_text", ""),
                     content.get("content_html", ""),
+                    content.get("content_translated", ""),
                     content.get("content_fetched_at", ""),
                     content.get("content_error", ""),
+                    content.get("ai_summary", ""),
+                    content.get("ai_summary_status", ""),
+                    content.get("ai_summary_at", ""),
+                    content.get("ai_summary_error", ""),
                     item_id,
                 ),
             )

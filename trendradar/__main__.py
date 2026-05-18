@@ -990,12 +990,121 @@ class NewsAnalyzer:
 
             result = fetch_article_content(url, timeout=timeout, max_chars=max_chars)
             payload = build_content_payload(item.get("title", ""), result)
+            if result.status == "fetched":
+                payload.update(self._enrich_article_content(item, payload, content_cfg))
             if self.storage_manager.save_article_content(source_type, item_id, payload):
                 saved += 1
             if result.status == "failed":
                 failed += 1
 
         print(f"[正文] 正文抓取完成: 保存 {saved} 条, 失败 {failed} 条, 跳过 {skipped} 条")
+
+    def _enrich_article_content(
+        self,
+        item: Dict,
+        payload: Dict[str, str],
+        content_cfg: Dict,
+    ) -> Dict[str, str]:
+        """Use AI to summarize fetched content and translate English content."""
+        if not content_cfg.get("AI_ENRICH_ENABLED", True):
+            return {"ai_summary_status": "skipped"}
+
+        content_text = payload.get("content_text", "")
+        if not content_text.strip():
+            return {"ai_summary_status": "skipped"}
+
+        try:
+            from trendradar.ai.client import AIClient
+            from json_repair import repair_json
+        except Exception as e:
+            return {
+                "ai_summary_status": "failed",
+                "ai_summary_error": f"import_error: {str(e)[:160]}",
+            }
+
+        ai_config = self.ctx.config.get("AI", {})
+        client = AIClient(ai_config)
+        if not client.api_key:
+            return {
+                "ai_summary_status": "failed",
+                "ai_summary_error": "missing_ai_api_key",
+            }
+
+        title = item.get("title", "")
+        parsed_title = self._extract_appended_translation(title)
+        original_title = parsed_title[0] if parsed_title else title
+        existing_title_cn = parsed_title[1] if parsed_title else ""
+        language = payload.get("language", "")
+        summary_max_chars = int(content_cfg.get("SUMMARY_MAX_CHARS", 500) or 500)
+        should_translate = (
+            language == "en"
+            and bool(content_cfg.get("TRANSLATE_ENGLISH_CONTENT", True))
+        )
+
+        if should_translate:
+            task = (
+                "The article is in English. Return Chinese fields only: "
+                "title_translated, content_translated, ai_summary."
+            )
+        else:
+            task = (
+                "The article is Chinese or already readable in Chinese. "
+                "Only return ai_summary. Do not translate the full article."
+            )
+
+        prompt = f"""
+请根据下面的新闻正文生成 App 入库字段。
+
+要求：
+1. 只输出 JSON，不要 Markdown，不要解释。
+2. ai_summary 使用中文，最多 {summary_max_chars} 个汉字，客观概括事实，不添加立场。
+3. 如果正文是英文，content_translated 保存正文中文翻译；如果正文是中文，content_translated 为空字符串。
+4. 如果已有中文标题，可沿用；否则英文标题需要翻译为中文。
+
+任务：{task}
+
+标题：
+{original_title}
+
+已有中文标题：
+{existing_title_cn}
+
+正文：
+{content_text[:8000]}
+
+输出 JSON 格式：
+{{
+  "title_translated": "",
+  "content_translated": "",
+  "ai_summary": ""
+}}
+""".strip()
+
+        try:
+            response = client.chat([{"role": "user", "content": prompt}])
+            data = json.loads(repair_json(response))
+            now = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+            result = {
+                "ai_summary": str(data.get("ai_summary", "")).strip()[:summary_max_chars],
+                "ai_summary_status": "generated",
+                "ai_summary_at": now,
+            }
+            title_translated = str(data.get("title_translated", "") or existing_title_cn).strip()
+            if title_translated:
+                result.update({
+                    "title_translated": title_translated,
+                    "translation_status": "translated",
+                    "translated_at": now,
+                })
+            content_translated = str(data.get("content_translated", "")).strip()
+            if should_translate and content_translated:
+                result["content_translated"] = content_translated
+            return result
+        except Exception as e:
+            return {
+                "ai_summary_status": "failed",
+                "ai_summary_error": f"{type(e).__name__}: {str(e)[:180]}",
+            }
 
     def _send_notification_if_needed(
         self,

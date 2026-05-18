@@ -37,8 +37,13 @@ CREATE TABLE IF NOT EXISTS rss_items (
     content_fetch_status TEXT DEFAULT 'pending', -- pending/fetched/failed/skipped
     content_text TEXT DEFAULT '',             -- 正文纯文本
     content_html TEXT DEFAULT '',             -- 正文 HTML 片段/快照
+    content_translated TEXT DEFAULT '',       -- 正文中文翻译
     content_fetched_at TEXT,                  -- 正文抓取时间
     content_error TEXT DEFAULT '',            -- 正文抓取失败原因
+    ai_summary TEXT DEFAULT '',               -- AI 生成摘要
+    ai_summary_status TEXT DEFAULT 'pending', -- pending/generated/failed/skipped
+    ai_summary_at TEXT,                       -- 摘要生成时间
+    ai_summary_error TEXT DEFAULT '',         -- 摘要生成失败原因
     first_crawl_time TEXT NOT NULL,           -- 首次抓取时间
     last_crawl_time TEXT NOT NULL,            -- 最后抓取时间
     crawl_count INTEGER DEFAULT 1,            -- 抓取次数
