@@ -1,9 +1,6 @@
 name: Get Hot News
 
 on:
-  schedule:
-    # GitHub Actions cron uses UTC. This runs at Beijing time 08:00 and 20:00.
-    - cron: "0 0,12 * * *"
   workflow_dispatch:
 
 concurrency:
